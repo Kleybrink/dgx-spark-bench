@@ -1,0 +1,18 @@
+[Unit]
+Description=Ollama Service
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/ollama serve
+User=ollama
+Group=ollama
+Restart=always
+RestartSec=3
+Environment="PATH=/home/admin/.local/bin:/home/admin/.local/bin:/usr/local/cuda/bin:/opt/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/home/admin/.lmstudio/bin:/home/admin/.lmstudio/bin"
+Environment="OLLAMA_HOST=0.0.0.0:11434"
+Environment="OLLAMA_NUM_PARALLEL=2"
+Environment="OLLAMA_KV_CACHE_TYPE=q8"
+Environment="OLLAMA_FLASH_ATTENTION=true"
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Benchmark Results Viewer</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5/papaparse.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f1117; --card: #1a1d27; --border: #2a2d3a; --text: #e4e4e7;
+  --muted: #8b8b9e; --purple: #a78bfa; --orange: #fb923c;
+  --green: #4ade80; --yellow: #facc15; --red: #f87171;
+  --accent: #6366f1; --hover: #23263a;
+}
+html { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; }
+body { max-width: 1400px; margin: 0 auto; padding: 24px 16px; }
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+
+/* Header */
+.header { text-align: center; margin-bottom: 32px; }
+.header h1 { font-size: 1.8em; font-weight: 700; margin-bottom: 4px; }
+.header p { color: var(--muted); font-size: 0.9em; }
+
+/* Drop zone */
+.drop-zone {
+  border: 2px dashed var(--border); border-radius: 12px; padding: 48px 24px;
+  text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 24px;
+}
+.drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: rgba(99,102,241,0.06); }
+.drop-zone p { color: var(--muted); margin-top: 8px; font-size: 0.85em; }
+.drop-zone .icon { font-size: 2em; margin-bottom: 8px; }
+.file-input { display: none; }
+
+/* Loaded files pills */
+.loaded-files { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; justify-content: center; }
+.file-pill {
+  background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+  padding: 4px 14px; font-size: 0.8em; color: var(--muted);
+}
+.file-pill.active { border-color: var(--green); color: var(--green); }
+
+/* Tabs */
+.tabs {
+  display: flex; gap: 4px; border-bottom: 1px solid var(--border);
+  margin-bottom: 24px; overflow-x: auto; padding-bottom: 0;
+}
+.tab-btn {
+  background: none; border: none; color: var(--muted); padding: 10px 18px;
+  font-family: inherit; font-size: 0.9em; font-weight: 500; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+.tab-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Card */
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 24px; margin-bottom: 20px;
+}
+.card h2 { font-size: 1.15em; font-weight: 600; margin-bottom: 16px; }
+
+/* Tab panels */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Tables */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+th, td { padding: 10px 14px; text-align: left; white-space: nowrap; }
+th {
+  color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border);
+  cursor: pointer; user-select: none; position: sticky; top: 0; background: var(--card);
+}
+th:hover { color: var(--text); }
+th .sort-arrow { margin-left: 4px; font-size: 0.75em; }
+td { border-bottom: 1px solid rgba(42,45,58,0.5); }
+tr:hover td { background: var(--hover); }
+
+/* Badges */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 0.75em; font-weight: 600;
+}
+.badge-think { background: rgba(167,139,250,0.15); color: var(--purple); }
+.badge-nothink { background: rgba(251,146,60,0.15); color: var(--orange); }
+.badge-rank { font-size: 0.9em; margin-right: 6px; }
+.badge-gold { color: #fbbf24; }
+.badge-silver { color: #94a3b8; }
+.badge-bronze { color: #d97706; }
+
+/* Inline bar */
+.bar-cell { display: flex; align-items: center; gap: 10px; }
+.bar-bg { flex: 1; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; min-width: 60px; }
+.bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.3s; }
+
+/* Pass rate color */
+.pr-green { color: var(--green); }
+.pr-yellow { color: var(--yellow); }
+.pr-red { color: var(--red); }
+
+/* Chart container */
+.chart-box { position: relative; width: 100%; min-height: 400px; }
+.chart-box canvas { width: 100% !important; }
+
+/* Model pills (for category chart) */
+.model-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.model-pill {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 4px 12px; font-size: 0.78em; cursor: pointer; transition: all 0.15s;
+  user-select: none;
+}
+.model-pill.selected { border-color: var(--accent); background: rgba(99,102,241,0.15); color: #fff; }
+
+/* Heatmap */
+.heatmap-wrap { overflow: auto; max-height: 70vh; }
+.heatmap { border-collapse: separate; border-spacing: 2px; font-size: 0.8em; }
+.heatmap th { position: sticky; top: 0; background: var(--card); z-index: 2; padding: 6px 10px; font-size: 0.78em; }
+.heatmap th:first-child { position: sticky; left: 0; z-index: 3; }
+.heatmap td:first-child {
+  position: sticky; left: 0; background: var(--card); z-index: 1;
+  font-weight: 500; min-width: 200px;
+}
+.heatmap td {
+  padding: 8px 10px; text-align: center; border-radius: 4px; cursor: pointer;
+  transition: opacity 0.15s; min-width: 80px;
+}
+.heatmap td:hover { opacity: 0.8; }
+
+/* Detail panel */
+.detail-panel {
+  background: #12141e; border: 1px solid var(--border); border-radius: 8px;
+  padding: 20px; margin-top: 16px;
+}
+.detail-panel h3 { font-size: 1em; margin-bottom: 12px; }
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.detail-stat label { display: block; color: var(--muted); font-size: 0.75em; margin-bottom: 2px; }
+.detail-stat .val { font-family: 'JetBrains Mono', monospace; font-size: 0.95em; }
+.detail-answer {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 12px; font-size: 0.82em; max-height: 200px; overflow-y: auto;
+  white-space: pre-wrap; word-break: break-word; line-height: 1.5;
+}
+.detail-answer.expanded { max-height: none; }
+.expand-btn {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  color: var(--muted); padding: 4px 12px; font-size: 0.78em; cursor: pointer;
+  margin-top: 8px;
+}
+
+/* Placeholder message */
+.placeholder { text-align: center; padding: 60px 20px; color: var(--muted); }
+.placeholder p { font-size: 0.95em; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  body { padding: 12px 8px; }
+  .tab-btn { padding: 8px 12px; font-size: 0.82em; }
+  .card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Benchmark Results Viewer</h1>
+  <p>Load CSV files from a benchmark run to explore results interactively</p>
+</div>
+
+<div class="drop-zone" id="dropZone">
+  <div class="icon">&#128206;</div>
+  <strong>Drop CSV files here or click to browse</strong>
+  <p>Accepts: ranking, category_summary, summary, and raw CSV files</p>
+  <input type="file" class="file-input" id="fileInput" multiple accept=".csv">
+</div>
+
+<div class="loaded-files" id="loadedFiles"></div>
+
+<div class="tabs" id="tabBar">
+  <button class="tab-btn active" data-tab="leaderboard" disabled>Leaderboard</button>
+  <button class="tab-btn" data-tab="accuracy" disabled>Accuracy</button>
+  <button class="tab-btn" data-tab="categories" disabled>Categories</button>
+  <button class="tab-btn" data-tab="speed" disabled>Speed</button>
+  <button class="tab-btn" data-tab="prompts" disabled>Prompts</button>
+  <button class="tab-btn" data-tab="gpu" disabled>GPU</button>
+</div>
+
+<div id="panel-leaderboard" class="tab-panel active">
+  <div class="placeholder"><p>Load the ranking CSV to see the leaderboard</p></div>
+</div>
+<div id="panel-accuracy" class="tab-panel">
+  <div class="placeholder"><p>Load the ranking CSV to see accuracy charts</p></div>
+</div>
+<div id="panel-categories" class="tab-panel">
+  <div class="placeholder"><p>Load the category summary CSV to see category breakdown</p></div>
+</div>
+<div id="panel-speed" class="tab-panel">
+  <div class="placeholder"><p>Load the summary CSV to see the speed vs accuracy scatter</p></div>
+</div>
+<div id="panel-prompts" class="tab-panel">
+  <div class="placeholder"><p>Load the summary CSV to see the prompt heatmap</p></div>
+</div>
+<div id="panel-gpu" class="tab-panel">
+  <div class="placeholder"><p>Load the summary CSV to see GPU metrics</p></div>
+</div>
+
+<script>
+// ── State ──
+const state = {
+  ranking: null, category: null, summary: null, raw: null,
+  models: [], categories: [], prompts: [], charts: {}
+};
+
+// ── CSV classification ──
+function classifyFile(name) {
+  const n = name.toLowerCase();
+  if (n.includes('ranking')) return 'ranking';
+  if (n.includes('category_summary') || n.includes('category-summary')) return 'category';
+  if (n.includes('summary') && !n.includes('category')) return 'summary';
+  if (n.includes('raw')) return 'raw';
+  return null;
+}
+
+// ── CSV parsing ──
+function parseCSV(text) {
+  const result = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true });
+  result.data.forEach(row => {
+    if ('think' in row) {
+      row.think = row.think === true || row.think === 'True' || row.think === 'true' || row.think === 1;
+    }
+  });
+  return result.data;
+}
+
+// ── File handling ──
+function handleFiles(files) {
+  Array.from(files).forEach(file => {
+    const kind = classifyFile(file.name);
+    if (!kind) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      state[kind] = parseCSV(reader.result);
+      deriveState();
+      updateUI();
+    };
+    reader.readAsText(file);
+  });
+}
+
+function deriveState() {
+  const allRows = [...(state.ranking || []), ...(state.summary || []), ...(state.category || [])];
+  const ms = new Set(); allRows.forEach(r => r.model && ms.add(r.model));
+  state.models = [...ms].sort();
+
+  if (state.category) {
+    const cs = new Set(); state.category.forEach(r => r.category && cs.add(r.category));
+    state.categories = [...cs].sort();
+  }
+  if (state.summary) {
+    const ps = new Set(); state.summary.forEach(r => r.prompt_name && ps.add(r.prompt_name));
+    state.prompts = [...ps].sort();
+  }
+}
+
+// ── UI plumbing ──
+function updateUI() {
+  updateFilePills();
+  enableTabs();
+  const active = document.querySelector('.tab-btn.active');
+  if (active && !active.disabled) renderTab(active.dataset.tab);
+  else {
+    // activate first enabled tab
+    const first = document.querySelector('.tab-btn:not([disabled])');
+    if (first) { switchTab(first.dataset.tab); }
+  }
+}
+
+function updateFilePills() {
+  const el = document.getElementById('loadedFiles');
+  const types = [
+    ['ranking', 'Ranking'], ['category', 'Category Summary'],
+    ['summary', 'Summary'], ['raw', 'Raw']
+  ];
+  el.innerHTML = types.map(([k, label]) =>
+    `<span class="file-pill${state[k] ? ' active' : ''}">${label}${state[k] ? ' ✓' : ''}</span>`
+  ).join('');
+}
+
+function enableTabs() {
+  const rules = {
+    leaderboard: !!state.ranking, accuracy: !!state.ranking,
+    categories: !!state.category, speed: !!state.summary,
+    prompts: !!state.summary, gpu: !!state.summary
+  };
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.disabled = !rules[btn.dataset.tab];
+  });
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
+  renderTab(name);
+}
+
+const rendered = {};
+function renderTab(name) {
+  if (rendered[name]) return;
+  const fn = {
+    leaderboard: renderLeaderboard, accuracy: renderAccuracyChart,
+    categories: renderCategoryChart, speed: renderSpeedChart,
+    prompts: renderPromptHeatmap, gpu: renderGPUCharts
+  }[name];
+  if (fn) { fn(); rendered[name] = true; }
+}
+
+// ── Helpers ──
+function fmt(v, d = 2) { return v == null || isNaN(v) ? '--' : Number(v).toFixed(d); }
+function fmtPct(v) { return v == null || isNaN(v) ? '--' : (v * 100).toFixed(1) + '%'; }
+function prClass(v) {
+  if (v == null || isNaN(v)) return '';
+  return v >= 0.8 ? 'pr-green' : v >= 0.5 ? 'pr-yellow' : 'pr-red';
+}
+function thinkBadge(t) { return t ? '<span class="badge badge-think">think</span>' : '<span class="badge badge-nothink">no-think</span>'; }
+function rankBadge(r) {
+  if (r === 1) return '<span class="badge-rank badge-gold">&#9679;</span>';
+  if (r === 2) return '<span class="badge-rank badge-silver">&#9679;</span>';
+  if (r === 3) return '<span class="badge-rank badge-bronze">&#9679;</span>';
+  return '';
+}
+
+const PALETTE = [
+  '#6366f1','#a78bfa','#fb923c','#4ade80','#f87171','#38bdf8',
+  '#facc15','#f472b6','#22d3ee','#a3e635','#e879f9','#2dd4bf'
+];
+
+function destroyChart(key) {
+  if (state.charts[key]) { state.charts[key].destroy(); delete state.charts[key]; }
+}
+
+// ── 1. Leaderboard ──
+function renderLeaderboard() {
+  if (!state.ranking) return;
+  const panel = document.getElementById('panel-leaderboard');
+  const data = [...state.ranking].sort((a, b) => a.rank - b.rank);
+  const maxComp = Math.max(...data.map(r => r.composite_score || 0));
+
+  const cols = [
+    { key: 'rank', label: 'Rank', render: (r) => `${rankBadge(r.rank)}<span class="mono">${r.rank}</span>` },
+    { key: 'model', label: 'Model', render: (r) => `<strong>${r.model}</strong>` },
+    { key: 'think', label: 'Mode', render: (r) => thinkBadge(r.think) },
+    { key: 'composite_score', label: 'Composite', render: (r) => {
+      const pct = ((r.composite_score || 0) / maxComp * 100).toFixed(0);
+      return `<div class="bar-cell"><span class="mono">${fmt(r.composite_score, 3)}</span><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div></div>`;
+    }},
+    { key: 'judge_pass_rate', label: 'Pass Rate', render: (r) => `<span class="mono ${prClass(r.judge_pass_rate)}">${fmtPct(r.judge_pass_rate)}</span>` },
+    { key: 'decode_tokens_per_s', label: 'Decode tok/s', render: (r) => `<span class="mono">${fmt(r.decode_tokens_per_s, 1)}</span>` },
+    { key: 'end_to_end_tokens_per_s', label: 'E2E tok/s', render: (r) => `<span class="mono">${fmt(r.end_to_end_tokens_per_s, 1)}</span>` },
+    { key: 'ttft_s', label: 'TTFT (s)', render: (r) => `<span class="mono">${fmt(r.ttft_s, 3)}</span>` },
+    { key: 'wall_latency_s', label: 'Wall (s)', render: (r) => `<span class="mono">${fmt(r.wall_latency_s, 1)}</span>` },
+  ];
+
+  let sortCol = 'rank', sortAsc = true;
+
+  function draw() {
+    const sorted = [...data].sort((a, b) => {
+      let va = a[sortCol], vb = b[sortCol];
+      if (va == null) return 1; if (vb == null) return -1;
+      return sortAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+    });
+
+    panel.innerHTML = `<div class="card"><h2>Model Leaderboard</h2><div class="tbl-wrap"><table>
+      <thead><tr>${cols.map(c => {
+        const arrow = c.key === sortCol ? (sortAsc ? ' &#9650;' : ' &#9660;') : '';
+        return `<th data-col="${c.key}">${c.label}<span class="sort-arrow">${arrow}</span></th>`;
+      }).join('')}</tr></thead>
+      <tbody>${sorted.map(r => `<tr>${cols.map(c => `<td>${c.render(r)}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table></div></div>`;
+
+    panel.querySelectorAll('th').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = th.dataset.col;
+        if (col === sortCol) sortAsc = !sortAsc;
+        else { sortCol = col; sortAsc = col === 'rank' || col === 'ttft_s' || col === 'wall_latency_s'; }
+        rendered.leaderboard = false;
+        draw();
+      });
+    });
+  }
+  draw();
+  rendered.leaderboard = true;
+}
+
+// ── 2. Accuracy Chart ──
+function renderAccuracyChart() {
+  if (!state.ranking) return;
+  const panel = document.getElementById('panel-accuracy');
+  const models = [...new Set(state.ranking.map(r => r.model))].sort();
+
+  const thinkData = models.map(m => {
+    const r = state.ranking.find(x => x.model === m && x.think);
+    return r ? (r.judge_pass_rate || 0) * 100 : null;
+  });
+  const nothinkData = models.map(m => {
+    const r = state.ranking.find(x => x.model === m && !x.think);
+    return r ? (r.judge_pass_rate || 0) * 100 : null;
+  });
+
+  panel.innerHTML = '<div class="card"><h2>Accuracy: Judge Pass Rate by Model</h2><div class="chart-box"><canvas id="chartAccuracy"></canvas></div></div>';
+
+  destroyChart('accuracy');
+  state.charts.accuracy = new Chart(document.getElementById('chartAccuracy'), {
+    type: 'bar',
+    data: {
+      labels: models,
+      datasets: [
+        { label: 'Think', data: thinkData, backgroundColor: 'rgba(167,139,250,0.7)', borderColor: '#a78bfa', borderWidth: 1 },
+        { label: 'No-think', data: nothinkData, backgroundColor: 'rgba(251,146,60,0.7)', borderColor: '#fb923c', borderWidth: 1 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#e4e4e7' } } },
+      scales: {
+        x: { ticks: { color: '#8b8b9e', maxRotation: 45 }, grid: { color: 'rgba(42,45,58,0.5)' } },
+        y: { min: 0, max: 100, ticks: { color: '#8b8b9e', callback: v => v + '%' }, grid: { color: 'rgba(42,45,58,0.5)' } }
+      }
+    }
+  });
+}
+
+// ── 3. Category Chart ──
+function renderCategoryChart() {
+  if (!state.category) return;
+  const panel = document.getElementById('panel-categories');
+
+  // Build combos: model + think
+  const combos = [];
+  const seen = new Set();
+  state.category.forEach(r => {
+    const key = `${r.model}|${r.think}`;
+    if (!seen.has(key)) { seen.add(key); combos.push({ model: r.model, think: r.think }); }
+  });
+  combos.sort((a, b) => a.model.localeCompare(b.model) || (a.think === b.think ? 0 : a.think ? -1 : 1));
+
+  const selectedCombos = new Set(combos.slice(0, 6).map((c, i) => i));
+
+  function draw() {
+    const active = combos.filter((_, i) => selectedCombos.has(i));
+    const cats = state.categories;
+
+    const datasets = active.map((c, i) => {
+      const label = `${c.model} ${c.think ? '(think)' : '(no-think)'}`;
+      const data = cats.map(cat => {
+        const row = state.category.find(r => r.model === c.model && r.think === c.think && r.category === cat);
+        return row ? (row.judge_pass_rate || 0) * 100 : null;
+      });
+      return {
+        label, data,
+        backgroundColor: PALETTE[i % PALETTE.length] + 'b3',
+        borderColor: PALETTE[i % PALETTE.length],
+        borderWidth: 1
+      };
+    });
+
+    panel.innerHTML = `<div class="card"><h2>Accuracy by Category</h2>
+      <div class="model-pills" id="catPills">
+        ${combos.map((c, i) => `<span class="model-pill${selectedCombos.has(i) ? ' selected' : ''}" data-idx="${i}">
+          ${c.model} ${c.think ? '(think)' : '(no-think)'}
+        </span>`).join('')}
+      </div>
+      <div class="chart-box"><canvas id="chartCategory"></canvas></div>
+    </div>`;
+
+    panel.querySelectorAll('.model-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const idx = parseInt(pill.dataset.idx);
+        if (selectedCombos.has(idx)) selectedCombos.delete(idx); else selectedCombos.add(idx);
+        rendered.categories = false;
+        destroyChart('category');
+        draw();
+      });
+    });
+
+    destroyChart('category');
+    state.charts.category = new Chart(document.getElementById('chartCategory'), {
+      type: 'bar',
+      data: { labels: cats, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#e4e4e7', font: { size: 11 } }, position: 'bottom' } },
+        scales: {
+          x: { ticks: { color: '#8b8b9e' }, grid: { color: 'rgba(42,45,58,0.5)' } },
+          y: { min: 0, max: 100, ticks: { color: '#8b8b9e', callback: v => v + '%' }, grid: { color: 'rgba(42,45,58,0.5)' } }
+        }
+      }
+    });
+  }
+  draw();
+  rendered.categories = true;
+}
+
+// ── 4. Speed vs Accuracy Scatter ──
+function renderSpeedChart() {
+  if (!state.summary) return;
+  const panel = document.getElementById('panel-speed');
+
+  // Aggregate: sum wall_latency_s and mean judge_pass_rate per (model, think)
+  const agg = {};
+  state.summary.forEach(r => {
+    const key = `${r.model}|${r.think}`;
+    if (!agg[key]) agg[key] = { model: r.model, think: r.think, wall: 0, pr: [], count: 0 };
+    agg[key].wall += r.wall_latency_s || 0;
+    if (r.judge_pass_rate != null && !isNaN(r.judge_pass_rate)) agg[key].pr.push(r.judge_pass_rate);
+    agg[key].count++;
+  });
+
+  const points = Object.values(agg).map(a => ({
+    model: a.model, think: a.think,
+    x: a.wall,
+    y: a.pr.length ? (a.pr.reduce((s, v) => s + v, 0) / a.pr.length * 100) : null,
+    label: `${a.model} ${a.think ? '(T)' : '(NT)'}`
+  })).filter(p => p.y !== null);
+
+  const thinkPts = points.filter(p => p.think);
+  const nothinkPts = points.filter(p => !p.think);
+
+  panel.innerHTML = '<div class="card"><h2>Speed vs Accuracy</h2><div class="chart-box"><canvas id="chartSpeed"></canvas></div></div>';
+
+  // Custom plugin to draw labels
+  const labelPlugin = {
+    id: 'pointLabels',
+    afterDatasetsDraw(chart) {
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.font = '10px Inter, sans-serif';
+      ctx.fillStyle = '#8b8b9e';
+      ctx.textAlign = 'left';
+      chart.data.datasets.forEach((ds, di) => {
+        const meta = chart.getDatasetMeta(di);
+        meta.data.forEach((pt, i) => {
+          const raw = ds.data[i];
+          if (raw && raw.label) {
+            ctx.fillText(raw.label, pt.x + 6, pt.y - 6);
+          }
+        });
+      });
+      ctx.restore();
+    }
+  };
+
+  destroyChart('speed');
+  state.charts.speed = new Chart(document.getElementById('chartSpeed'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Think',
+          data: thinkPts.map(p => ({ x: p.x, y: p.y, label: p.label })),
+          backgroundColor: 'rgba(167,139,250,0.8)', borderColor: '#a78bfa',
+          pointStyle: 'triangle', pointRadius: 7, pointHoverRadius: 10,
+        },
+        {
+          label: 'No-think',
+          data: nothinkPts.map(p => ({ x: p.x, y: p.y, label: p.label })),
+          backgroundColor: 'rgba(251,146,60,0.8)', borderColor: '#fb923c',
+          pointStyle: 'circle', pointRadius: 6, pointHoverRadius: 9,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#e4e4e7' } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const d = ctx.raw;
+              return `${d.label}: ${d.y.toFixed(1)}% @ ${d.x.toFixed(1)}s`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Total Wall Latency (s)', color: '#8b8b9e' }, ticks: { color: '#8b8b9e' }, grid: { color: 'rgba(42,45,58,0.5)' } },
+        y: { title: { display: true, text: 'Judge Pass Rate (%)', color: '#8b8b9e' }, min: 0, max: 100, ticks: { color: '#8b8b9e', callback: v => v + '%' }, grid: { color: 'rgba(42,45,58,0.5)' } }
+      }
+    },
+    plugins: [labelPlugin]
+  });
+}
+
+// ── 5. Prompt Heatmap ──
+function renderPromptHeatmap() {
+  if (!state.summary) return;
+  const panel = document.getElementById('panel-prompts');
+
+  // Build model+think combos ordered by rank if available
+  const comboOrder = new Map();
+  if (state.ranking) {
+    [...state.ranking].sort((a, b) => a.rank - b.rank).forEach((r, i) => {
+      comboOrder.set(`${r.model}|${r.think}`, i);
+    });
+  }
+  const combos = [];
+  const seen = new Set();
+  state.summary.forEach(r => {
+    const key = `${r.model}|${r.think}`;
+    if (!seen.has(key)) { seen.add(key); combos.push({ model: r.model, think: r.think, key }); }
+  });
+  combos.sort((a, b) => {
+    const oa = comboOrder.has(a.key) ? comboOrder.get(a.key) : 9999;
+    const ob = comboOrder.has(b.key) ? comboOrder.get(b.key) : 9999;
+    return oa - ob || a.model.localeCompare(b.model);
+  });
+
+  // Group prompts by category
+  const promptsByCategory = {};
+  state.prompts.forEach(p => {
+    const parts = p.split('--');
+    const cat = parts[0] || 'other';
+    if (!promptsByCategory[cat]) promptsByCategory[cat] = [];
+    promptsByCategory[cat].push(p);
+  });
+
+  // Build lookup
+  const lookup = {};
+  state.summary.forEach(r => {
+    lookup[`${r.model}|${r.think}|${r.prompt_name}`] = r;
+  });
+
+  function prColor(v) {
+    if (v == null || isNaN(v)) return 'rgba(42,45,58,0.5)';
+    // Red to yellow to green
+    const pct = Math.max(0, Math.min(1, v));
+    if (pct < 0.5) {
+      const t = pct / 0.5;
+      return `rgba(${248 - t * 8}, ${Math.round(113 + t * 90)}, ${Math.round(113 - t * 92)}, 0.7)`;
+    }
+    const t = (pct - 0.5) / 0.5;
+    return `rgba(${Math.round(240 - t * 166)}, ${Math.round(203 + t * 22)}, ${Math.round(21 + t * 107)}, 0.7)`;
+  }
+
+  const categories = Object.keys(promptsByCategory).sort();
+
+  let html = `<div class="card"><h2>Prompt Heatmap — Judge Pass Rate</h2>
+    <p style="color:var(--muted);font-size:0.82em;margin-bottom:12px">Click a cell to see detailed run data</p>
+    <div class="heatmap-wrap"><table class="heatmap"><thead><tr><th>Prompt</th>
+    ${combos.map(c => `<th style="writing-mode:vertical-lr;transform:rotate(180deg);max-width:32px">
+      ${c.model} ${c.think ? '(T)' : ''}</th>`).join('')}
+    </tr></thead><tbody>`;
+
+  categories.forEach(cat => {
+    html += `<tr><td colspan="${combos.length + 1}" style="color:var(--accent);font-weight:600;font-size:0.82em;padding:8px 10px;background:var(--bg)">${cat.toUpperCase()}</td></tr>`;
+    promptsByCategory[cat].forEach(p => {
+      const shortName = p.split('--').slice(1).join('--') || p;
+      html += `<tr><td title="${p}">${shortName}</td>`;
+      combos.forEach(c => {
+        const row = lookup[`${c.model}|${c.think}|${p}`];
+        const pr = row ? row.judge_pass_rate : null;
+        const bg = prColor(pr);
+        const text = pr != null ? (pr * 100).toFixed(0) + '%' : '--';
+        html += `<td style="background:${bg}" data-model="${c.model}" data-think="${c.think}" data-prompt="${p}">${text}</td>`;
+      });
+      html += '</tr>';
+    });
+  });
+
+  html += '</tbody></table></div><div id="promptDetail"></div></div>';
+  panel.innerHTML = html;
+
+  // Click handler for cells
+  panel.querySelectorAll('.heatmap td[data-model]').forEach(td => {
+    td.addEventListener('click', () => {
+      renderPromptDetail(td.dataset.model, td.dataset.think === 'true', td.dataset.prompt);
+    });
+  });
+}
+
+function renderPromptDetail(model, think, promptName) {
+  const container = document.getElementById('promptDetail');
+  if (!container) return;
+
+  // Get summary row
+  const sumRow = state.summary ? state.summary.find(r => r.model === model && r.think === think && r.prompt_name === promptName) : null;
+
+  // Get raw rows
+  const rawRows = state.raw ? state.raw.filter(r => r.model === model && r.think === think && r.prompt_name === promptName) : [];
+
+  let html = `<div class="detail-panel">
+    <h3>${model} ${think ? '(think)' : '(no-think)'} — ${promptName}</h3>`;
+
+  if (sumRow) {
+    html += `<div class="detail-grid">
+      <div class="detail-stat"><label>Pass Rate</label><div class="val ${prClass(sumRow.judge_pass_rate)}">${fmtPct(sumRow.judge_pass_rate)}</div></div>
+      <div class="detail-stat"><label>Judge Score</label><div class="val">${fmt(sumRow.judge_score, 2)}</div></div>
+      <div class="detail-stat"><label>Decode tok/s</label><div class="val">${fmt(sumRow.decode_tokens_per_s, 1)}</div></div>
+      <div class="detail-stat"><label>E2E tok/s</label><div class="val">${fmt(sumRow.end_to_end_tokens_per_s, 1)}</div></div>
+      <div class="detail-stat"><label>TTFT</label><div class="val">${fmt(sumRow.ttft_s, 3)}s</div></div>
+      <div class="detail-stat"><label>Wall Latency</label><div class="val">${fmt(sumRow.wall_latency_s, 2)}s</div></div>
+      <div class="detail-stat"><label>Output Tokens</label><div class="val">${fmt(sumRow.eval_count, 0)}</div></div>
+      <div class="detail-stat"><label>Answer Chars</label><div class="val">${fmt(sumRow.answer_chars, 0)}</div></div>
+    </div>`;
+  }
+
+  if (rawRows.length > 0) {
+    html += '<h4 style="margin:12px 0 8px;font-size:0.9em">Individual Runs</h4>';
+    rawRows.forEach((r, i) => {
+      const ansPreview = r.answer_preview || (r.answer_text ? r.answer_text.substring(0, 200) : '');
+      const judgeR = r.judge_reasoning || '';
+      html += `<div style="margin-bottom:12px;padding:12px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;font-size:0.82em">
+          <span><strong>Run ${r.run}</strong></span>
+          <span>Score: <span class="mono ${prClass(r.judge_score)}">${fmt(r.judge_score, 1)}</span></span>
+          <span>Decode: <span class="mono">${fmt(r.decode_tokens_per_s, 1)} tok/s</span></span>
+          <span>Wall: <span class="mono">${fmt(r.wall_latency_s, 2)}s</span></span>
+          <span>TTFT: <span class="mono">${fmt(r.ttft_s, 3)}s</span></span>
+        </div>`;
+      if (judgeR) {
+        html += `<div style="margin-bottom:6px"><label style="color:var(--muted);font-size:0.75em">Judge Reasoning</label>
+          <div style="font-size:0.82em;color:var(--yellow)">${escapeHtml(judgeR)}</div></div>`;
+      }
+      if (ansPreview) {
+        const fullText = r.answer_text || ansPreview;
+        const truncated = fullText.length > 300;
+        const ansId = _answerIdCounter++;
+        _answerStore[ansId] = fullText;
+        html += `<div><label style="color:var(--muted);font-size:0.75em">Answer</label>
+          <div class="detail-answer">${escapeHtml(truncated ? fullText.substring(0, 300) + '...' : fullText)}</div>`;
+        if (truncated) {
+          html += `<button class="expand-btn" onclick="toggleAnswer(this, ${ansId})">Show full answer</button>`;
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+  } else if (!state.raw) {
+    html += '<p style="color:var(--muted);font-size:0.85em">Load the raw CSV to see individual run data</p>';
+  }
+
+  html += '</div>';
+  container.innerHTML = html;
+  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Store full answer texts by ID to avoid inline data attributes
+const _answerStore = {};
+let _answerIdCounter = 0;
+
+window.toggleAnswer = function(btn, id) {
+  const div = btn.previousElementSibling;
+  const text = _answerStore[id] || '';
+  if (div.classList.contains('expanded')) {
+    div.classList.remove('expanded');
+    div.textContent = text.substring(0, 300) + '...';
+    btn.textContent = 'Show full answer';
+  } else {
+    div.classList.add('expanded');
+    div.textContent = text;
+    btn.textContent = 'Collapse';
+  }
+};
+
+// ── 6. GPU Charts ──
+function renderGPUCharts() {
+  if (!state.summary) return;
+  const panel = document.getElementById('panel-gpu');
+
+  // Aggregate GPU data per (model, think)
+  const agg = {};
+  state.summary.forEach(r => {
+    const key = `${r.model}|${r.think}`;
+    if (!agg[key]) agg[key] = { model: r.model, think: r.think, memPeaks: [], powerAvgs: [] };
+    if (r.gpu_mem_used_peak_mb != null && !isNaN(r.gpu_mem_used_peak_mb) && r.gpu_mem_used_peak_mb > 0)
+      agg[key].memPeaks.push(r.gpu_mem_used_peak_mb);
+    if (r.gpu_power_avg_w != null && !isNaN(r.gpu_power_avg_w) && r.gpu_power_avg_w > 0)
+      agg[key].powerAvgs.push(r.gpu_power_avg_w);
+  });
+
+  const entries = Object.values(agg).filter(a => a.memPeaks.length > 0 || a.powerAvgs.length > 0);
+  if (entries.length === 0) {
+    panel.innerHTML = '<div class="card"><h2>GPU Metrics</h2><p style="color:var(--muted)">No GPU data available in the summary CSV</p></div>';
+    return;
+  }
+
+  const models = [...new Set(entries.map(e => e.model))].sort();
+
+  const thinkMem = models.map(m => { const e = entries.find(x => x.model === m && x.think); return e && e.memPeaks.length ? e.memPeaks.reduce((a,b)=>a+b,0)/e.memPeaks.length : null; });
+  const nothinkMem = models.map(m => { const e = entries.find(x => x.model === m && !x.think); return e && e.memPeaks.length ? e.memPeaks.reduce((a,b)=>a+b,0)/e.memPeaks.length : null; });
+  const thinkPow = models.map(m => { const e = entries.find(x => x.model === m && x.think); return e && e.powerAvgs.length ? e.powerAvgs.reduce((a,b)=>a+b,0)/e.powerAvgs.length : null; });
+  const nothinkPow = models.map(m => { const e = entries.find(x => x.model === m && !x.think); return e && e.powerAvgs.length ? e.powerAvgs.reduce((a,b)=>a+b,0)/e.powerAvgs.length : null; });
+
+  panel.innerHTML = `<div class="card"><h2>GPU Metrics</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="chart-box"><canvas id="chartGpuMem"></canvas></div>
+      <div class="chart-box"><canvas id="chartGpuPow"></canvas></div>
+    </div>
+  </div>`;
+
+  const barOpts = (title, unit) => ({
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#e4e4e7' } }, title: { display: true, text: title, color: '#e4e4e7' } },
+    scales: {
+      x: { ticks: { color: '#8b8b9e', maxRotation: 45 }, grid: { color: 'rgba(42,45,58,0.5)' } },
+      y: { ticks: { color: '#8b8b9e', callback: v => v + unit }, grid: { color: 'rgba(42,45,58,0.5)' } }
+    }
+  });
+
+  destroyChart('gpuMem');
+  state.charts.gpuMem = new Chart(document.getElementById('chartGpuMem'), {
+    type: 'bar',
+    data: {
+      labels: models,
+      datasets: [
+        { label: 'Think', data: thinkMem, backgroundColor: 'rgba(167,139,250,0.7)', borderColor: '#a78bfa', borderWidth: 1 },
+        { label: 'No-think', data: nothinkMem, backgroundColor: 'rgba(251,146,60,0.7)', borderColor: '#fb923c', borderWidth: 1 },
+      ]
+    },
+    options: barOpts('GPU Memory Peak (MB)', ' MB')
+  });
+
+  destroyChart('gpuPow');
+  state.charts.gpuPow = new Chart(document.getElementById('chartGpuPow'), {
+    type: 'bar',
+    data: {
+      labels: models,
+      datasets: [
+        { label: 'Think', data: thinkPow, backgroundColor: 'rgba(167,139,250,0.7)', borderColor: '#a78bfa', borderWidth: 1 },
+        { label: 'No-think', data: nothinkPow, backgroundColor: 'rgba(251,146,60,0.7)', borderColor: '#fb923c', borderWidth: 1 },
+      ]
+    },
+    options: barOpts('GPU Power Average (W)', ' W')
+  });
+}
+
+// ── Event handlers ──
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => { if (!btn.disabled) switchTab(btn.dataset.tab); });
+});
+</script>
+</body>
+</html>

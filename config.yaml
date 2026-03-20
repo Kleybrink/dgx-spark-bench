@@ -1,0 +1,683 @@
+models:
+  - lfm2:24b
+  - qwen3.5:0.8b
+  - qwen3.5:2b
+  - qwen3.5:4b
+  - qwen3.5:9b
+  - qwen3.5:27b
+  - qwen3.5:35b
+  - qwen3.5:122b
+  - qwen3-coder-next:latest
+  #- qwen3-next:80b
+  - nemotron-3-nano:4b
+  - nemotron-3-nano:30b
+  - nemotron-3-super:120b
+  - glm-4.7-flash
+  - gpt-oss:20b
+  - gpt-oss:120b
+
+prompts:
+
+  # ==========================================================================
+  # LOGIC
+  # ==========================================================================
+
+  - name: logic--hard--grid-puzzle
+    prompt: |
+      Solve the following logic grid puzzle exactly.
+
+      A row of houses have numbers 1 to 4 from left to right.
+      In each house lives a person with unique attributes in each of the following categories:
+
+      Jobs: baker, nurse, shop assistant, teacher.
+      Pets: budgerigar, cat, dog, rabbit.
+      Drinks: coffee, juice, milk, tea.
+      Hobbies: board games, handball, soccer, tennis.
+      Favourite fruits: apple, blackcurrant, orange, wild strawberry.
+
+      We also know the following:
+
+      1. The person with a master's degree in mathematics does not live in house no. 1.
+      2. The teacher lives to the immediate right of the coffee drinker.
+      3. The shop assistant lives to the immediate right of the budgie owner.
+      4. The rabbit owner does not live between the coffee drinker and the juice drinker, and they are three different people.
+      5. The dog owner does not like apples.
+      6. The person who owned a cactus often sails.
+      7. There are 2 houses between the nurse and the baker.
+      8. The tea drinker does not live next to the person who loves blackcurrants, and they are different people.
+      9. There is one house between the coffee drinker and the milk drinker.
+      10. There are many cars on the street.
+      11. There are 2 houses between the milk drinker and the tea drinker.
+      12. The nurse lives next to the dog owner.
+      13. There is one house between the person who plays board games and the person who plays handball.
+      14. The person who plays soccer lives next to the person who plays board games.
+      15. There are 2 houses between the person who plays soccer and the person who loves blackcurrants.
+      16. The person with a tattoo does not live in house no. 3.
+      17. The milk drinker is good friends with the person with a pet that is old for its species.
+      18. There is one house between the cat owner and the person who loves oranges.
+
+      Who has which attributes and lives in which house?
+
+      Please submit your answer as a JSON dictionary in the format below.
+
+      {
+        "object_1": ["jobs_1", "pets_1", "drinks_1", "hobbies_1", "favourite fruits_1"],
+        "object_2": ["jobs_2", "pets_2", "drinks_2", "hobbies_2", "favourite fruits_2"],
+        "object_3": ["jobs_3", "pets_3", "drinks_3", "hobbies_3", "favourite fruits_3"],
+        "object_4": ["jobs_4", "pets_4", "drinks_4", "hobbies_4", "favourite fruits_4"]
+      }
+    golden_answer: |
+      {
+        "object_1": ["nurse", "budgerigar", "tea", "soccer", "orange"],
+        "object_2": ["shop assistant", "dog", "coffee", "board games", "wild strawberry"],
+        "object_3": ["teacher", "cat", "juice", "tennis", "apple"],
+        "object_4": ["baker", "rabbit", "milk", "handball", "blackcurrant"]
+      }
+
+  - name: logic--easy--simple-deduction
+    prompt: |
+      Read the following statements and answer the question.
+
+      1. All dogs in the shelter are vaccinated.
+      2. Some vaccinated animals are microchipped.
+      3. Rex is a dog in the shelter.
+      4. Every animal in the shelter has a name tag.
+      5. The shelter was painted blue last summer.
+
+      Which of the following MUST be true?
+      A) Rex is microchipped.
+      B) Rex is vaccinated.
+      C) Rex is blue.
+      D) All vaccinated animals are dogs.
+
+      Return your answer as JSON:
+      {"answer": "<letter>"}
+    golden_answer: |
+      {"answer": "B"}
+
+  - name: logic--easy--alice-siblings
+    prompt: |
+      Alice has m sisters and n brothers.
+
+      How many sisters does each of Alice's brothers have?
+
+      Return your answer as JSON:
+      {"answer": "<expression in terms of m and n>"}
+    golden_answer: |
+      {"answer": "m + 1"}
+
+  - name: logic--medium--ordering-puzzle
+    prompt: |
+      Five runners finished a race. Determine their exact order (1st to 5th)
+      from the following clues:
+
+      1. Alice finished before Bob but after Charlie.
+      2. Dave finished immediately after Bob.
+      3. Eve did not finish last.
+      4. Charlie finished first.
+      5. The race was held on a sunny Saturday in June.
+      6. Eve finished before Dave.
+      7. Alice finished immediately after Charlie.
+
+      Return your answer as JSON:
+      {"1st": "<n>", "2nd": "<n>", "3rd": "<n>", "4th": "<n>", "5th": "<n>"}
+    golden_answer: |
+      {"1st": "Charlie", "2nd": "Alice", "3rd": "Eve", "4th": "Bob", "5th": "Dave"}
+
+  - name: logic--hard--scheduling-constraints
+    prompt: |
+      A university must schedule 5 exams (Math, Physics, Chemistry, Biology,
+      History) across 5 time slots (Monday 9am, Monday 2pm, Tuesday 9am,
+      Tuesday 2pm, Wednesday 9am). Each slot gets exactly one exam.
+
+      Constraints:
+      1. Math must be scheduled before Physics (earlier in the slot sequence).
+      2. Chemistry cannot be on Monday.
+      3. Biology must be in the very next slot after Chemistry.
+      4. History cannot be on the same day as Math.
+      5. Physics cannot be on Wednesday.
+      6. The university cafeteria serves pizza on Wednesdays.
+      7. Math cannot be in the Tuesday 2pm slot.
+      8. Biology cannot be on Wednesday.
+
+      Find the unique valid schedule.
+
+      Return your answer as JSON:
+      {
+        "monday_9am": "<exam>",
+        "monday_2pm": "<exam>",
+        "tuesday_9am": "<exam>",
+        "tuesday_2pm": "<exam>",
+        "wednesday_9am": "<exam>"
+      }
+    golden_answer: |
+      {
+        "monday_9am": "Math",
+        "monday_2pm": "Physics",
+        "tuesday_9am": "Chemistry",
+        "tuesday_2pm": "Biology",
+        "wednesday_9am": "History"
+      }
+
+  # ==========================================================================
+  # MATH
+  # ==========================================================================
+
+  - name: math--easy--simple-word-problem
+    prompt: |
+      Solve the following math word problem step by step.
+
+      A bakery sells cupcakes for 3.50 euros each and cookies for 1.20 euros each.
+      On Monday, they sold 24 cupcakes and 45 cookies.
+      On Tuesday, they sold 18 cupcakes and 60 cookies.
+      The bakery's daily fixed costs are 35 euros.
+
+      Note: The bakery has 3 employees and a cat named Muffin.
+
+      What was the bakery's total profit (revenue minus costs) over the
+      two days combined?
+
+      Return your answer as a JSON object:
+      {"profit": <number>}
+    golden_answer: |
+      {"profit": 203.0}
+
+  - name: math--medium--multi-step-percentages
+    prompt: |
+      Solve the following problem step by step.
+
+      A company has 240 employees.
+      - 35% work in Engineering.
+      - 20% work in Sales.
+      - 15% work in Marketing.
+      - The rest work in Operations.
+
+      The company plans a reorganization:
+      - Engineering will grow by 25% (rounded to nearest integer).
+      - Sales will shrink by 10% (rounded to nearest integer).
+      - Marketing stays the same.
+      - All remaining employees (from the total of 240) go to Operations.
+
+      After the reorganization, how many people work in each department?
+      The total number of employees stays at 240.
+
+      The company's building has 12 floors and the CEO drives a Tesla.
+
+      Return your answer as JSON:
+      {"engineering": <int>, "sales": <int>, "marketing": <int>, "operations": <int>}
+    golden_answer: |
+      {"engineering": 105, "sales": 43, "marketing": 36, "operations": 56}
+
+  - name: math--hard--combinatorics
+    prompt: |
+      Solve the following probability problem.
+
+      A bag contains 5 red balls, 4 blue balls, and 3 green balls.
+      You draw 3 balls without replacement.
+
+      What is the probability that you draw exactly one ball of each color?
+
+      Express your answer as a simplified fraction.
+
+      Return your answer as JSON:
+      {"probability": "<fraction>"}
+    golden_answer: |
+      {"probability": "3/11"}
+
+  # ==========================================================================
+  # CODE
+  # ==========================================================================
+
+  - name: code--easy--string-trace
+    prompt: |
+      What is the exact output of the following Python code?
+
+      ```python
+      def process(text):
+          vowels = "aeiou"
+          result = ""
+          for i, char in enumerate(text.lower()):
+              if char in vowels:
+                  result += str(i)
+              elif char.isalpha():
+                  result += char.upper()
+          return result
+
+      print(process("Hello World"))
+      ```
+
+      Return ONLY the exact printed output as JSON:
+      {"output": "<string>"}
+    golden_answer: |
+      {"output": "H1LL4W7RLD"}
+
+  - name: code--medium--algorithm-trace
+    prompt: |
+      Given the following Python function, determine its exact printed output.
+
+      ```python
+      def mystery(intervals):
+          intervals.sort(key=lambda x: x[0])
+          merged = [intervals[0]]
+          for current in intervals[1:]:
+              if current[0] <= merged[-1][1]:
+                  merged[-1] = [merged[-1][0], max(merged[-1][1], current[1])]
+              else:
+                  merged.append(current)
+          return merged
+
+      result = mystery([[1,3], [2,6], [8,10], [15,18], [9,12], [17,20]])
+      print(result)
+      ```
+
+      Return the exact printed output as JSON:
+      {"output": "<the printed list>"}
+    golden_answer: |
+      {"output": "[[1, 6], [8, 12], [15, 20]]"}
+
+  - name: code--hard--matrix-computation
+    prompt: |
+      Consider the following 3x3 matrix:
+
+      matrix = [
+        [2,  7,  6],
+        [9,  5,  1],
+        [4,  3,  8]
+      ]
+
+      Compute the following values:
+      1. The sum of the main diagonal (top-left to bottom-right).
+      2. The sum of the anti-diagonal (top-right to bottom-left).
+      3. The determinant of the matrix.
+      4. Is this a magic square? (All rows, all columns, and both diagonals
+         sum to the same value.)
+
+      Return your answer as JSON:
+      {
+        "main_diagonal_sum": <int>,
+        "anti_diagonal_sum": <int>,
+        "determinant": <int>,
+        "is_magic_square": <bool>
+      }
+    golden_answer: |
+      {
+        "main_diagonal_sum": 15,
+        "anti_diagonal_sum": 15,
+        "determinant": -360,
+        "is_magic_square": true
+      }
+
+  - name: code--medium--generation
+    prompt: |
+      Write a Python function called `fib_memo(n)` that returns the nth
+      Fibonacci number (0-indexed) using memoization with a dictionary.
+
+      Requirements:
+      - fib_memo(0) = 0, fib_memo(1) = 1
+      - Must use a dictionary for memoization (not functools.lru_cache)
+      - Must handle n up to 100 efficiently
+      - The function must be self-contained (no global variables)
+
+      The Fibonacci sequence was named after Leonardo of Pisa.
+
+      Return ONLY the function definition as JSON:
+      {"code": "<the complete function definition>"}
+    golden_answer: |
+      {"code": "def fib_memo(n, memo=None):\n    if memo is None:\n        memo = {}\n    if n in memo:\n        return memo[n]\n    if n <= 0:\n        return 0\n    if n == 1:\n        return 1\n    memo[n] = fib_memo(n - 1, memo) + fib_memo(n - 2, memo)\n    return memo[n]"}
+
+      A correct implementation must satisfy:
+      - fib_memo(0) == 0, fib_memo(1) == 1
+      - Uses a dict for memoization (not list, not functools.lru_cache)
+      - Self-contained: memo dict is inside the function or a default argument
+      - Any functionally equivalent approach (iterative with dict, closure, etc.) is equally valid
+
+  # ==========================================================================
+  # NLP
+  # ==========================================================================
+
+  - name: nlp--easy--fact-extraction
+    prompt: |
+      Extract the requested information from the following text.
+
+      "Dr. Maria Fischer, born on March 15, 1982, joined TechVision GmbH
+      as Chief Technology Officer on January 8, 2023. She previously worked
+      at Siemens for 12 years. The office is located at Hauptstrasse 42,
+      80331 Munich, Germany. Her team consists of 47 engineers. The office
+      building has a beautiful rooftop garden with 15 different plant species."
+
+      Return the extracted information as JSON:
+      {
+        "name": "<string>",
+        "birth_date": "<YYYY-MM-DD>",
+        "company": "<string>",
+        "role": "<string>",
+        "start_date": "<YYYY-MM-DD>",
+        "previous_employer": "<string>",
+        "years_at_previous": <int>,
+        "team_size": <int>,
+        "city": "<string>"
+      }
+    golden_answer: |
+      {
+        "name": "Dr. Maria Fischer",
+        "birth_date": "1982-03-15",
+        "company": "TechVision GmbH",
+        "role": "Chief Technology Officer",
+        "start_date": "2023-01-08",
+        "previous_employer": "Siemens",
+        "years_at_previous": 12,
+        "team_size": 47,
+        "city": "Munich"
+      }
+
+  - name: nlp--medium--sentiment-analysis
+    prompt: |
+      Analyze the sentiment of each of the following customer reviews.
+      Classify each as "positive", "negative", or "mixed".
+
+      Review 1: "The laptop arrived on time and the screen is gorgeous.
+      However, the battery life is disappointing - barely lasts 3 hours.
+      For this price, I expected more."
+
+      Review 2: "Absolutely terrible experience. The product broke after
+      two days and customer support hung up on me twice."
+
+      Review 3: "It does what it says on the tin. Nothing fancy but
+      reliable and well-built. Would buy again."
+
+      Review 4: "I was skeptical at first, but wow - this exceeded all
+      my expectations! Best purchase I have made this year."
+
+      Return your answer as JSON:
+      {
+        "review_1": "<sentiment>",
+        "review_2": "<sentiment>",
+        "review_3": "<sentiment>",
+        "review_4": "<sentiment>"
+      }
+    golden_answer: |
+      {
+        "review_1": "mixed",
+        "review_2": "negative",
+        "review_3": "positive",
+        "review_4": "positive"
+      }
+
+  - name: nlp--hard--reading-comprehension
+    prompt: |
+      Read the following passage carefully and answer the questions.
+
+      "In 2022, the town of Millbrook had a population of 12,500. By 2023,
+      the population grew by 8% due to a new factory opening. In 2024,
+      however, 5% of the 2023 population left after the factory reduced
+      its workforce by half. The factory originally employed 600 workers
+      from Millbrook.
+
+      The town's annual budget is calculated as 1,200 euros per resident.
+      The mayor, Tom Henderson, noted that the library renovation project
+      requires exactly 15% of the annual budget.
+
+      Interestingly, Millbrook is famous for its annual cheese festival,
+      which attracts visitors from three neighboring countries."
+
+      Answer these questions:
+      1. What was the population in 2023?
+      2. What was the population in 2024?
+      3. How many factory workers from Millbrook remained employed in 2024?
+      4. What is the 2024 annual town budget?
+      5. How much money is allocated for the library renovation based on 2024 figures?
+
+      Return your answer as JSON:
+      {
+        "population_2023": <int>,
+        "population_2024": <int>,
+        "factory_workers_2024": <int>,
+        "budget_2024": <number>,
+        "library_renovation": <number>
+      }
+    golden_answer: |
+      {
+        "population_2023": 13500,
+        "population_2024": 12825,
+        "factory_workers_2024": 300,
+        "budget_2024": 15390000,
+        "library_renovation": 2308500
+      }
+
+  # ==========================================================================
+  # KNOWLEDGE
+  # ==========================================================================
+
+  - name: knowledge--easy--basic-science
+    prompt: |
+      Answer the following science questions. Be precise.
+
+      1. What is the chemical symbol for gold?
+      2. How many chromosomes do humans typically have?
+      3. What is the speed of light in a vacuum, in km/s (rounded to nearest thousand)?
+      4. What planet is closest to the Sun?
+      5. What is the pH value of pure water at 25 degrees Celsius?
+
+      Note: Albert Einstein liked to play the violin and had a pet parrot.
+
+      Return your answer as JSON:
+      {
+        "gold_symbol": "<string>",
+        "human_chromosomes": <int>,
+        "speed_of_light_kms": <int>,
+        "closest_planet_to_sun": "<string>",
+        "pure_water_ph": <number>
+      }
+    golden_answer: |
+      {
+        "gold_symbol": "Au",
+        "human_chromosomes": 46,
+        "speed_of_light_kms": 300000,
+        "closest_planet_to_sun": "Mercury",
+        "pure_water_ph": 7
+      }
+
+  - name: knowledge--medium--common-misconceptions
+    prompt: |
+      For each statement, determine if it is TRUE or FALSE.
+      Be careful: these test common misconceptions.
+
+      1. The Great Wall of China is visible from space with the naked eye.
+      2. Lightning never strikes the same place twice.
+      3. Goldfish have a memory span of only 3 seconds.
+      4. Mount Everest is the tallest mountain on Earth measured from sea level.
+      5. Diamonds are formed from compressed coal.
+      6. The Sahara is the largest desert on Earth.
+      7. Humans and dinosaurs coexisted at the same time.
+
+      Return your answer as JSON:
+      {
+        "statement_1": "<TRUE or FALSE>",
+        "statement_2": "<TRUE or FALSE>",
+        "statement_3": "<TRUE or FALSE>",
+        "statement_4": "<TRUE or FALSE>",
+        "statement_5": "<TRUE or FALSE>",
+        "statement_6": "<TRUE or FALSE>",
+        "statement_7": "<TRUE or FALSE>"
+      }
+    golden_answer: |
+      {
+        "statement_1": "FALSE",
+        "statement_2": "FALSE",
+        "statement_3": "FALSE",
+        "statement_4": "TRUE",
+        "statement_5": "FALSE",
+        "statement_6": "FALSE",
+        "statement_7": "FALSE"
+      }
+
+  # ==========================================================================
+  # INSTRUCTION FOLLOWING
+  # ==========================================================================
+
+  - name: instruction-following--medium--transform
+    prompt: |
+      Follow these instructions EXACTLY. Do not add explanations.
+
+      Given this list of fruits with prices per kg:
+      Apple 2.50, Banana 1.80, Cherry 8.90, Date 12.50, Elderberry 15.00,
+      Fig 6.30, Grape 4.20, Honeydew 3.10
+
+      1. Filter out all fruits that cost more than 10.00 per kg.
+      2. Sort the remaining fruits alphabetically by name.
+      3. Calculate the average price of the remaining fruits (round to 2 decimals).
+      4. Return the result.
+
+      The list was compiled on a rainy Tuesday afternoon.
+
+      Return as JSON:
+      {
+        "filtered_fruits": ["<name1>", "<name2>", ...],
+        "average_price": <number>
+      }
+    golden_answer: |
+      {
+        "filtered_fruits": ["Apple", "Banana", "Cherry", "Fig", "Grape", "Honeydew"],
+        "average_price": 4.47
+      }
+
+  # ==========================================================================
+  # SPATIAL
+  # ==========================================================================
+
+  - name: spatial--medium--reasoning-grid
+    prompt: |
+      A 4x4 grid has rows labeled 1-4 (top to bottom) and columns labeled
+      A-D (left to right).
+
+      Place the following items on the grid according to the rules:
+
+      1. A star is placed at B2.
+      2. A circle is placed two cells to the right of the star.
+      3. A triangle is placed directly below the circle.
+      4. A square is placed in the same row as the star, but in column A.
+      5. A diamond is placed directly above the square.
+      6. The grid has a blue background with white lines.
+      7. A heart is placed two rows below the diamond.
+
+      Return the position of each shape as JSON:
+      {
+        "star": "<col><row>",
+        "circle": "<col><row>",
+        "triangle": "<col><row>",
+        "square": "<col><row>",
+        "diamond": "<col><row>",
+        "heart": "<col><row>"
+      }
+    golden_answer: |
+      {
+        "star": "B2",
+        "circle": "D2",
+        "triangle": "D3",
+        "square": "A2",
+        "diamond": "A1",
+        "heart": "A3"
+      }
+
+  # ==========================================================================
+  # DATA
+  # ==========================================================================
+
+  - name: data--medium--aggregation
+    prompt: |
+      Given the following sales data, compute the requested aggregations.
+
+      | Date       | Product  | Quantity | Unit_Price |
+      |------------|----------|----------|------------|
+      | 2024-01-15 | Widget A |       10 |       5.00 |
+      | 2024-01-15 | Widget B |        5 |      12.00 |
+      | 2024-01-16 | Widget A |        8 |       5.00 |
+      | 2024-01-16 | Widget C |        3 |      20.00 |
+      | 2024-01-17 | Widget B |        7 |      12.00 |
+      | 2024-01-17 | Widget A |       12 |       5.00 |
+      | 2024-01-17 | Widget C |        2 |      20.00 |
+
+      Compute:
+      1. Total revenue per product (quantity times unit_price, summed).
+      2. The day with the highest total revenue.
+      3. The product with the highest total quantity sold.
+
+      The table was exported from SAP on a Windows machine.
+
+      Return your answer as JSON:
+      {
+        "revenue_per_product": {
+          "Widget A": <number>,
+          "Widget B": <number>,
+          "Widget C": <number>
+        },
+        "highest_revenue_day": "<YYYY-MM-DD>",
+        "highest_quantity_product": "<product name>"
+      }
+    golden_answer: |
+      {
+        "revenue_per_product": {
+          "Widget A": 150.0,
+          "Widget B": 144.0,
+          "Widget C": 100.0
+        },
+        "highest_revenue_day": "2024-01-17",
+        "highest_quantity_product": "Widget A"
+      }
+
+  # ==========================================================================
+  # MULTI-DOMAIN
+  # ==========================================================================
+
+  - name: multi-domain--hard--road-trip
+    prompt: |
+      A group of friends are planning a road trip. Read the information
+      carefully and answer all questions.
+
+      - There are 4 friends: Anna, Ben, Clara, and Dan.
+      - They will drive a total of 720 km.
+      - Each person drives an equal share of the distance.
+      - The car consumes 6 liters of fuel per 100 km.
+      - Fuel costs 1.85 euros per liter.
+      - They split the total fuel cost equally among all 4 friends.
+      - Additionally, they pay a flat toll fee of 24 euros (also split equally).
+      - Ben insists on driving the first leg. Clara drives immediately after Ben.
+      - Dan drives last. Anna drives between Clara and Dan.
+      - Ben recently got a new haircut and Clara's favorite color is green.
+
+      Answer:
+      1. How many km does each person drive?
+      2. What is the total fuel cost for the trip (round to 2 decimals)?
+      3. How much does each person pay in total (fuel share + toll share, round to 2 decimals)?
+      4. What is the driving order from first to last?
+
+      Return as JSON:
+      {
+        "km_per_person": <number>,
+        "total_fuel_cost": <number>,
+        "cost_per_person": <number>,
+        "driving_order": ["<1st>", "<2nd>", "<3rd>", "<4th>"]
+      }
+    golden_answer: |
+      {
+        "km_per_person": 180,
+        "total_fuel_cost": 79.92,
+        "cost_per_person": 25.98,
+        "driving_order": ["Ben", "Clara", "Anna", "Dan"]
+      }
+
+# ==========================================================================
+# JUDGE & RUNTIME SETTINGS
+# ==========================================================================
+
+judge_model: "qwen3.5:35b"
+judge_temperature: 0.1
+judge_think: false
+
+ollama_base_url: "http://localhost:11434"  # overridden by OLLAMA_HOST env var if set
+runs_per_mode: 2
+keep_alive: "10m"
+timeout_s: 300
+warmup_timeout_s: 600
+vram_settle_s: 30
+vram_free_target: 0.70
