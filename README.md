@@ -113,6 +113,8 @@ Prompt names follow the convention `category--difficulty--short_name` (e.g. `mat
 - Requires **JSON-formatted output** to test instruction compliance
 - Has a **golden answer** for automated scoring
 
+Each inference run has a **5-minute timeout** (`timeout_s` in config). Runs that exceed this limit are discarded and count as failures.
+
 Each model is tested in both **think** (reasoning) and **no-think** (direct) modes.
 
 ## Key Learnings
