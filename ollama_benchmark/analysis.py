@@ -43,22 +43,17 @@ REPORT_METRICS = [
 ]
 
 # Weights for the composite ranking score.
+# Two user-facing dimensions: quality (correct answers) and speed (wait time).
 _RANKING_WEIGHTS = {
-    "judge_pass_rate": 0.55,
-    "decode_tokens_per_s": 0.20,
-    "end_to_end_tokens_per_s": 0.10,
-    "ttft_s": 0.075,
-    "wall_latency_s": 0.075,
+    "judge_pass_rate": 0.65,
+    "wall_latency_s": 0.35,
 }
 # Metrics where lower is better (will be inverted during normalisation).
-_LOWER_IS_BETTER = {"ttft_s", "wall_latency_s"}
+_LOWER_IS_BETTER = {"wall_latency_s"}
 
 # Fallback weights when judge data is unavailable.
 _RANKING_WEIGHTS_NO_JUDGE = {
-    "decode_tokens_per_s": 0.40,
-    "end_to_end_tokens_per_s": 0.25,
-    "ttft_s": 0.20,
-    "wall_latency_s": 0.15,
+    "wall_latency_s": 1.0,
 }
 
 

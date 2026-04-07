@@ -8,6 +8,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
+from adjustText import adjust_text  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +220,8 @@ def generate_walltime_vs_accuracy_chart(
         .str.cat(agg["think"].map({True: "(T)", False: "(F)"}), sep=" ")
     )
 
-    fig, ax = plt.subplots(figsize=(10, 7))
+    fig, ax = plt.subplots(figsize=(14, 9))
+    texts = []
     for think_val, marker, color in [(True, "^", "#1f77b4"), (False, "o", "#ff7f0e")]:
         subset = agg[agg["think"] == think_val]
         if subset.empty:
@@ -234,13 +236,24 @@ def generate_walltime_vs_accuracy_chart(
             zorder=3,
         )
         for _, row in subset.iterrows():
-            ax.annotate(
-                row["label"],
-                (row["wall_latency_s"], row["judge_pass_rate"] * 100),
-                textcoords="offset points",
-                xytext=(6, 6),
-                fontsize=8,
+            texts.append(
+                ax.text(
+                    row["wall_latency_s"],
+                    row["judge_pass_rate"] * 100,
+                    row["label"],
+                    fontsize=7,
+                )
             )
+
+    adjust_text(
+        texts,
+        ax=ax,
+        arrowprops=dict(arrowstyle="-", color="gray", alpha=0.5, lw=0.5),
+        force_text=(1.5, 1.5),
+        force_points=(2.0, 2.0),
+        expand=(1.5, 1.5),
+        max_move=50.0,
+    )
 
     ax.set_title("Wall Time vs Accuracy", fontsize=14)
     ax.set_xlabel("Total Wall Latency (s)")
@@ -289,7 +302,7 @@ def generate_throughput_scatter_chart(
     if agg.empty:
         return None
 
-    fig, ax = plt.subplots(figsize=(10, 7))
+    fig, ax = plt.subplots(figsize=(14, 9))
     ax.scatter(
         agg["prompt_tokens_per_s"],
         agg["decode_tokens_per_s"],
@@ -298,14 +311,25 @@ def generate_throughput_scatter_chart(
         s=80,
         zorder=3,
     )
+    texts = []
     for _, row in agg.iterrows():
-        ax.annotate(
-            row["model"],
-            (row["prompt_tokens_per_s"], row["decode_tokens_per_s"]),
-            textcoords="offset points",
-            xytext=(6, 6),
-            fontsize=8,
+        texts.append(
+            ax.text(
+                row["prompt_tokens_per_s"],
+                row["decode_tokens_per_s"],
+                row["model"],
+                fontsize=7,
+            )
         )
+    adjust_text(
+        texts,
+        ax=ax,
+        arrowprops=dict(arrowstyle="-", color="gray", alpha=0.5, lw=0.5),
+        force_text=(1.5, 1.5),
+        force_points=(2.0, 2.0),
+        expand=(1.5, 1.5),
+        max_move=50.0,
+    )
 
     ax.set_title("Encoding vs Decoding Throughput", fontsize=14)
     ax.set_xlabel("Prompt Tokens/s (Encoding)")
