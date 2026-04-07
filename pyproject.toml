@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ollama-benchmarking"
+version = "0.1.0"
+description = "Automated benchmarking for local LLMs served by Ollama (latency, throughput, LLM-as-judge quality)."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Dandy Kleybrink" }]
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28",
+    "matplotlib>=3.10.8",
+    "ollama>=0.6.1",
+    "pandas>=3.0.2",
+    "psutil>=7.2.2",
+    "pyyaml>=6.0.3",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["ollama_benchmark"]

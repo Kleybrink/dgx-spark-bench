@@ -16,6 +16,11 @@ models:
   - glm-4.7-flash
   - gpt-oss:20b
   - gpt-oss:120b
+  - devstral-small-2:24b
+  - gemma4:26b
+  - gemma4:26b-a4b-it-q8_0
+  - gemma4:e2b
+  - gemma4:e4b
 
 prompts:
 
