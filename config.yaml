@@ -21,6 +21,9 @@ models:
   - gemma4:26b-a4b-it-q8_0
   - gemma4:e2b
   - gemma4:e4b
+  - qwen3.6:27b-q8_0
+  - qwen3.6:35b-a3b-q4_K_M
+  - qwen3.6:35b-a3b-q8_0
 
 prompts:
 

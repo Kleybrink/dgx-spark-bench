@@ -132,7 +132,7 @@ Each model is tested in both **think** (reasoning) and **no-think** (direct) mod
 
 ## Key Learnings
 
-The latest benchmark results (21 models, 39 model-mode combinations, 21 prompts) produced several findings relevant to anyone running LLMs locally on bandwidth-constrained hardware. For full details, see [`REPORT.md`](results/20260407_135131/REPORT.md).
+The latest benchmark results (24 models, 45 model-mode combinations, 21 prompts) produced several findings relevant to anyone running LLMs locally on bandwidth-constrained hardware. For full details, see [`REPORT.md`](results/20260504_031837/REPORT.md).
 
 ### MoE architecture is the decisive factor
 
@@ -171,7 +171,7 @@ The model with the highest cloud intelligence index (Qwen3.5:27b, AA Index 42) i
 
 ## Latest Results
 
-Benchmark run from 2026-04-07: 21 models, 39 model-mode combinations, 21 prompts across 9 categories, 2 runs per combination. All values are means across runs. For the full analysis, see [`REPORT.md`](results/20260407_135131/REPORT.md).
+Benchmark run from 2026-05-04: 24 models, 45 model-mode combinations, 21 prompts across 9 categories, 2 runs per combination. All values are means across runs. For the full analysis, see [`REPORT.md`](results/20260504_031837/REPORT.md).
 
 ### Composite Score
 
@@ -191,54 +191,60 @@ Ranked by composite score (65% quality, 35% wall time):
 | Rank | Model | Think | Pass Rate | Decode (tok/s) | TTFT (s) | Wall (s) | Composite |
 |-----:|-------|:-----:|----------:|---------------:|---------:|---------:|----------:|
 | 1 | gpt-oss:20b | Yes | 100.0% | 52.7 | 0.33 | 14.3 | 0.883 |
-| 2 | gpt-oss:20b | No | 100.0% | 55.2 | 0.33 | 15.3 | 0.864 |
-| 3 | gpt-oss:120b | Yes | 100.0% | 40.0 | 0.58 | 16.1 | 0.855 |
-| 4 | nemotron-cascade-2:30b | Yes | 100.0% | 66.8 | 0.31 | 18.5 | 0.828 |
-| 5 | gemma4:26b | No | 96.4% | 28.3 | 1.26 | 15.2 | 0.780 |
-| 6 | gpt-oss:120b | No | 96.4% | 39.2 | 0.60 | 18.0 | 0.743 |
-| 7 | nemotron-3-nano:30b | Yes | 97.6% | 69.0 | 0.30 | 21.2 | 0.732 |
-| 8 | nemotron-3-nano:4b | Yes | 89.3% | 66.5 | 0.19 | 11.2 | 0.707 |
-| 9 | gemma4:26b | Yes | 100.0% | 27.6 | 1.14 | 67.1 | 0.680 |
-| 10 | qwen3.5:35b | Yes | 98.8% | 56.4 | 0.37 | 54.7 | 0.647 |
-| 11 | gemma4:26b-a4b-it-q8_0 | No | 91.7% | 23.1 | 1.36 | 19.1 | 0.647 |
-| 12 | qwen3-coder-next | No | 85.7% | 44.1 | 0.45 | 13.3 | 0.610 |
-| 13 | gemma4:e2b | Yes | 91.7% | 48.3 | 0.86 | 34.2 | 0.582 |
-| 14 | gemma4:e4b | Yes | 94.0% | 29.1 | 1.00 | 48.4 | 0.580 |
-| 15 | nemotron-3-super:120b | Yes | 95.2% | 19.8 | 21.96 | 61.4 | 0.570 |
-| 16 | qwen3.5:35b | No | 78.6% | 57.3 | 0.37 | 12.9 | 0.542 |
-| 17 | glm-4.7-flash | Yes | 90.5% | 55.0 | 0.29 | 36.2 | 0.539 |
-| 18 | gemma4:e4b | No | 85.7% | 30.2 | 0.90 | 26.0 | 0.490 |
-| 19 | qwen3.5:4b | No | 78.6% | 54.9 | 0.25 | 16.9 | 0.487 |
-| 20 | lfm2:24b | No | 71.4% | 71.4 | 0.18 | 11.8 | 0.466 |
-| 21 | gemma4:26b-a4b-it-q8_0 | Yes | 90.5% | 22.8 | 1.21 | 84.7 | 0.465 |
-| 22 | glm-4.7-flash | No | 48.8% | 59.1 | 0.30 | 2.4 | 0.425 |
-| 23 | gemma4:e2b | No | 76.2% | 47.6 | 0.87 | 18.9 | 0.416 |
-| 24 | nemotron-3-nano:30b | No | 44.0% | 70.1 | 0.31 | 1.1 | 0.409 |
-| 25 | nemotron-cascade-2:30b | No | 44.0% | 68.4 | 0.31 | 1.4 | 0.400 |
-| 26 | qwen3.5:9b | Yes | 88.1% | 34.0 | 0.28 | 94.0 | 0.395 |
-| 27 | nemotron-3-nano:4b | No | 41.7% | 68.4 | 0.19 | 1.0 | 0.384 |
-| 28 | qwen3.5:122b | No | 79.8% | 22.2 | 30.77 | 52.9 | 0.383 |
-| 29 | qwen3.5:122b | Yes | 88.1% | 21.8 | 26.86 | 141.1 | 0.377 |
-| 30 | qwen3.5:4b | Yes | 81.0% | 53.8 | 0.25 | 88.6 | 0.345 |
-| 31 | nemotron-3-super:120b | No | 72.6% | 20.0 | 21.56 | 31.1 | 0.336 |
-| 32 | devstral-small-2:24b | No | 76.2% | 9.5 | 1.03 | 44.0 | 0.324 |
-| 33 | qwen3.5:2b | No | 40.5% | 87.7 | 0.20 | 11.7 | 0.321 |
-| 34 | qwen3.5:2b | Yes | 78.6% | 85.3 | 0.19 | 84.2 | 0.312 |
-| 35 | qwen3.5:27b | No | 70.2% | 11.2 | 0.55 | 32.0 | 0.292 |
-| 36 | qwen3.5:9b | No | 65.5% | 32.2 | 0.29 | 22.8 | 0.286 |
-| 37 | qwen3.5:0.8b | No | 34.5% | 159.2 | 0.18 | 22.8 | 0.175 |
-| 38 | qwen3.5:27b | Yes | 66.7% | 10.9 | 0.61 | 218.5 | 0.137 |
-| 39 | qwen3.5:0.8b | Yes | 44.0% | 156.6 | 0.29 | 137.4 | 0.087 |
+| 2 | gpt-oss:20b | No | 100.0% | 55.2 | 0.33 | 15.3 | 0.867 |
+| 3 | gpt-oss:120b | Yes | 100.0% | 40.0 | 0.58 | 16.1 | 0.859 |
+| 4 | nemotron-cascade-2:30b | Yes | 100.0% | 66.8 | 0.31 | 18.5 | 0.835 |
+| 5 | gemma4:26b | No | 96.4% | 28.3 | 1.26 | 15.2 | 0.794 |
+| 6 | gpt-oss:120b | No | 96.4% | 39.2 | 0.60 | 18.0 | 0.762 |
+| 7 | nemotron-3-nano:30b | Yes | 97.6% | 69.0 | 0.30 | 21.2 | 0.752 |
+| 8 | nemotron-3-nano:4b | Yes | 89.3% | 66.5 | 0.19 | 11.2 | 0.716 |
+| 9 | gemma4:26b | Yes | 100.0% | 27.6 | 1.14 | 67.1 | 0.700 |
+| 10 | gemma4:26b-a4b-it-q8_0 | No | 91.7% | 23.1 | 1.36 | 19.1 | 0.679 |
+| 11 | qwen3.5:35b | Yes | 98.8% | 56.4 | 0.37 | 54.7 | 0.672 |
+| 12 | gemma4:e2b | Yes | 91.7% | 48.3 | 0.86 | 34.2 | 0.623 |
+| 13 | qwen3-coder-next | No | 85.7% | 44.1 | 0.45 | 13.3 | 0.618 |
+| 14 | gemma4:e4b | Yes | 94.0% | 29.1 | 1.00 | 48.4 | 0.614 |
+| 15 | nemotron-3-super:120b | Yes | 95.2% | 19.8 | 21.96 | 61.4 | 0.605 |
+| 16 | glm-4.7-flash | Yes | 90.5% | 55.0 | 0.29 | 36.2 | 0.578 |
+| 17 | qwen3.5:35b | No | 78.6% | 57.3 | 0.37 | 12.9 | 0.559 |
+| 18 | qwen3.6:35b-a3b-q4_K_M | No | 73.8% | 59.6 | 0.36 | 9.7 | 0.518 |
+| 19 | gemma4:e4b | No | 85.7% | 30.2 | 0.90 | 26.0 | 0.514 |
+| 20 | qwen3.5:4b | No | 78.6% | 54.9 | 0.25 | 16.9 | 0.511 |
+| 21 | qwen3.6:35b-a3b-q8_0 | Yes | 90.5% | 45.8 | 0.40 | 82.1 | 0.507 |
+| 22 | gemma4:26b-a4b-it-q8_0 | Yes | 90.5% | 22.8 | 1.21 | 84.7 | 0.491 |
+| 23 | qwen3.6:35b-a3b-q8_0 | No | 73.8% | 46.1 | 0.39 | 12.9 | 0.486 |
+| 24 | qwen3.6:35b-a3b-q4_K_M | Yes | 89.3% | 58.6 | 0.37 | 81.8 | 0.478 |
+| 25 | lfm2:24b | No | 71.4% | 71.4 | 0.18 | 11.8 | 0.457 |
+| 26 | gemma4:e2b | No | 76.2% | 47.6 | 0.87 | 18.9 | 0.451 |
+| 27 | glm-4.7-flash | No | 48.8% | 59.1 | 0.30 | 2.4 | 0.415 |
+| 28 | qwen3.5:122b | No | 79.8% | 22.2 | 30.77 | 52.9 | 0.414 |
+| 29 | qwen3.5:9b | Yes | 88.1% | 34.0 | 0.28 | 94.0 | 0.409 |
+| 30 | nemotron-3-nano:30b | No | 44.0% | 70.1 | 0.31 | 1.1 | 0.401 |
+| 31 | nemotron-cascade-2:30b | No | 44.0% | 68.4 | 0.31 | 1.4 | 0.393 |
+| 32 | qwen3.5:122b | Yes | 88.1% | 21.8 | 26.86 | 141.1 | 0.393 |
+| 33 | nemotron-3-nano:4b | No | 41.7% | 68.4 | 0.19 | 1.0 | 0.380 |
+| 34 | qwen3.5:4b | Yes | 81.0% | 53.8 | 0.25 | 88.6 | 0.365 |
+| 35 | devstral-small-2:24b | No | 76.2% | 9.5 | 1.03 | 44.0 | 0.363 |
+| 36 | qwen3.6:27b-q8_0 | No | 75.0% | 7.4 | 0.70 | 42.6 | 0.349 |
+| 37 | qwen3.5:2b | Yes | 78.6% | 85.3 | 0.19 | 84.2 | 0.336 |
+| 38 | nemotron-3-super:120b | No | 72.6% | 20.0 | 21.56 | 31.1 | 0.336 |
+| 39 | qwen3.5:2b | No | 40.5% | 87.7 | 0.20 | 11.7 | 0.317 |
+| 40 | qwen3.5:27b | No | 70.2% | 11.2 | 0.55 | 32.0 | 0.299 |
+| 41 | qwen3.5:9b | No | 65.5% | 32.2 | 0.29 | 22.8 | 0.293 |
+| 42 | qwen3.5:0.8b | No | 34.5% | 159.2 | 0.18 | 22.8 | 0.183 |
+| 43 | qwen3.5:27b | Yes | 66.7% | 10.9 | 0.61 | 218.5 | 0.141 |
+| 44 | qwen3.6:27b-q8_0 | Yes | 54.8% | 7.3 | 0.93 | 242.3 | 0.103 |
+| 45 | qwen3.5:0.8b | Yes | 44.0% | 156.6 | 0.29 | 137.4 | 0.083 |
 
 ### Charts
 
-![Accuracy by model](results/20260407_135131/ollama_benchmark_accuracy_20260407_135131.png)
+![Accuracy by model](results/20260504_031837/ollama_benchmark_accuracy_20260504_031837.png)
 
-![Wall time vs accuracy](results/20260407_135131/ollama_benchmark_walltime_vs_accuracy_20260407_135131.png)
+![Wall time vs accuracy](results/20260504_031837/ollama_benchmark_walltime_vs_accuracy_20260504_031837.png)
 
-![Throughput scatter](results/20260407_135131/ollama_benchmark_throughput_scatter_20260407_135131.png)
+![Throughput scatter](results/20260504_031837/ollama_benchmark_throughput_scatter_20260504_031837.png)
 
-![Category performance](results/20260407_135131/ollama_benchmark_category_20260407_135131.png)
+![Category performance](results/20260504_031837/ollama_benchmark_category_20260504_031837.png)
 
 
 ## Disclaimer
